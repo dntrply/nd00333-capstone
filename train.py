@@ -11,6 +11,7 @@ from azureml.data.dataset_factory import TabularDatasetFactory
 
 from sklearn.linear_model import LogisticRegression
 CAPSTONE_TABULAR_WINE_DATA = 'https://archive.ics.uci.edu/ml/machine-learning-databases/wine-quality/winequality-white.csv'
+CAPSTONE_DEPLOYED_HYPER_MODEL_PATH = 'outputs/best_run_hyperdrive.pkl' 
 
 
 def clean_data(all_data):
@@ -57,7 +58,9 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
 run = Run.get_context()
 
-
+os.makedirs('outputs', exist_ok=True)
+# note file saved in the outputs folder is automatically uploaded into experiment record
+joblib.dump(value=clf, filename=CAPSTONE_DEPLOYED_HYPER_MODEL_PATH)
 
 if __name__ == '__main__':
     main()
