@@ -22,7 +22,7 @@ DATASET_DESCRIPTION = 'White Wind data set obtained form the UCI datasets'
 # Training related constants
 TRAIN_DATA_DIR = 'train_normalized_data'
 TRAIN_DATA_FILE = 'train_normalized.csv'
-TRAIN_NORMALIZATION_PARAMETERS_FILE = 'normaliztion_parameeters.csv'
+TRAIN_NORMALIZATION_PARAMETERS_FILE = 'normaliztion_parameters.csv'
 
 # curated environment to be used for HyperML
 CURATED_ENV_NAME = 'AzureML-Tutorial'
@@ -45,4 +45,6 @@ INFERENCE_SCORING_SCRIPT = 'score.py'
 
 DEPLOYED_SERVICE = 'white-wine-service'
 
-ENV_DIR - '.' 
+ENV_DIR = '.'
+BEST_RUN_ENV = 'best_run_env.yml'
+

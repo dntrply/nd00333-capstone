@@ -8,14 +8,17 @@ from sklearn.preprocessing import OneHotEncoder
 import pandas as pd
 from azureml.core.run import Run
 from azureml.data.dataset_factory import TabularDatasetFactory
+from azureml.core.workspace import Workspace
+from azureml.core.datastore import Datastore
 
 from sklearn.linear_model import LogisticRegression
 
-import constants 
+import capstone_constants as c_constants
 
 
 
-def getdataset():
+
+def get_dataset(ws):
     """Get (or create the dataset) for training
 
     Returns:
@@ -29,7 +32,7 @@ def getdataset():
     # grab the data and create a dataset
     # See if the dataset already exists - if so, skip the Dataset creation pieces
 
-    ds_name = constants.DATASET_NAME
+    ds_name = c_constants.DATASET_NAME
     dsets = ws.datasets.keys()
 
     if ds_name in dsets:
@@ -40,7 +43,7 @@ def getdataset():
         # This is the original white wine data - not normalized
         # We will normalize the data and then create a dataset that
         # then will continue to be used
-        ds = TabularDatasetFactory.from_delimited_files(constants.TABULAR_WINE_DATA_URI, separator=';')
+        ds = TabularDatasetFactory.from_delimited_files(c_constants.TABULAR_WINE_DATA_URI, separator=';')
         
         X, y, norm_df = clean_data(ds.to_pandas_dataframe())
         
@@ -64,28 +67,25 @@ def getdataset():
         
         # To be able to load to datastore - the data needs to be in a folder.
         # Thus first create the directory if it does not exist
-        file_path = os.path.join(constants.TRAIN_DATA_DIR, constants.TRAIN_DATA_FILE)
-        norm_file_path = os.path.join(constants.TRAIN_DATA_DIR, constants.TRAIN_NORMALIZATION_PARAMETERS_FILE)
-        if constants.TRAIN_DATA_DIR not in os.listdir():
-          os.mkdir(os.path.join('.', constants.TRAIN_DATA_DIR))
-        else:
-          # delete contents of directory
-          os.remove(file_path)
-          os.remove(norm_file_path)
+        file_path = os.path.join('.', c_constants.TRAIN_DATA_DIR, c_constants.TRAIN_DATA_FILE)
+        norm_file_path = os.path.join('.', c_constants.TRAIN_DATA_DIR, c_constants.TRAIN_NORMALIZATION_PARAMETERS_FILE)
+        if c_constants.TRAIN_DATA_DIR not in os.listdir():
+          os.mkdir(os.path.join('.', c_constants.TRAIN_DATA_DIR))
+
           
         # now save the training data to disk
         train_data.to_csv(file_path, index=False)
-        norm_df.to_csv(norm_file_path)
+        norm_df.to_csv(norm_file_path, index=False)
         
         # upload the file to the default datastore
         datastore = ws.get_default_datastore()
-        datastore.upload(src_dir=const.TRAIN_DATA_DIR, target_path=const.TRAIN_DATA_DIR, overwrite=True)
+        datastore.upload(src_dir=c_constants.TRAIN_DATA_DIR, target_path=c_constants.TRAIN_DATA_DIR, overwrite=True)
 
         # Now Create the training dataset 
-        train_ds = TabularDatasetFactory.from_delimited_files(datastore.path(file_path))
+        train_ds = TabularDatasetFactory.from_delimited_files(datastore.path(os.path.join(c_constants.TRAIN_DATA_DIR, c_constants.TRAIN_DATA_FILE)))
         
         # Register the dataset so that on repeated runs, the data does not have to be fetched evey time
-        train_ds = train_ds.register(workspace=ws, name=ds_name, description=constants.DATASET_DESCRIPTION)
+        train_ds = train_ds.register(workspace=ws, name=ds_name, description=c_constants.DATASET_DESCRIPTION)
 
     return train_ds
 
@@ -123,10 +123,15 @@ def main():
     accuracy = model.score(x_test, y_test)
     run.log("Accuracy", np.float(accuracy))
 
+    os.makedirs(c_constants.TRAIN_DATA_DIR, exist_ok=True)
+    
+    # note file saved in the outputs folder is automatically uploaded into experiment record
+    joblib.dump(value=model, filename=c_constants.DEPLOYED_HYPER_MODEL_PATH)
+
 # Create TabularDataset using TabularDatasetFactory
 # Data is located at:
 
-ds = TabularDatasetFactory.from_delimited_files(constants.CAPSTONE_TABULAR_WINE_DATA, separator=';')
+ds = TabularDatasetFactory.from_delimited_files(c_constants.TABULAR_WINE_DATA_URI, separator=';')
 
 x, y, _ = clean_data(ds.to_pandas_dataframe())
 
@@ -136,9 +141,8 @@ x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
 run = Run.get_context()
 
-os.makedirs(os.path.dirname(constants.TRAIN_DATA_DIR, exist_ok=True)
-# note file saved in the outputs folder is automatically uploaded into experiment record
-joblib.dump(value=model, filename=constants.DEPLOYED_HYPER_MODEL_PATH)
+
+
 
 if __name__ == '__main__':
     main()
