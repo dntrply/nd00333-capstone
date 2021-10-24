@@ -11,8 +11,7 @@ from inference_schema.parameter_types.standard_py_parameter_type import Standard
 from inference_schema.parameter_types.numpy_parameter_type import NumpyParameterType
 from inference_schema.parameter_types.pandas_parameter_type import PandasParameterType
 
-CAPSTONE_DEPLOYED_MODEL_PATH = './outputs/best_automl.pkl'
-
+DEPLOYED_AUTOML_MODEL_PATH = 'outputs/best_automl.pkl'
 
 def init():
     global model
