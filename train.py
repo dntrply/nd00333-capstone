@@ -11,34 +11,100 @@ from azureml.data.dataset_factory import TabularDatasetFactory
 
 from sklearn.linear_model import LogisticRegression
 
+import constants 
 
-def clean_data(data):
-    # Dict for cleaning data
-    months = {"jan":1, "feb":2, "mar":3, "apr":4, "may":5, "jun":6, "jul":7, "aug":8, "sep":9, "oct":10, "nov":11, "dec":12}
-    weekdays = {"mon":1, "tue":2, "wed":3, "thu":4, "fri":5, "sat":6, "sun":7}
 
-    # Clean and one hot encode data
-    x_df = data.to_pandas_dataframe().dropna()
-    jobs = pd.get_dummies(x_df.job, prefix="job")
-    x_df.drop("job", inplace=True, axis=1)
-    x_df = x_df.join(jobs)
-    x_df["marital"] = x_df.marital.apply(lambda s: 1 if s == "married" else 0)
-    x_df["default"] = x_df.default.apply(lambda s: 1 if s == "yes" else 0)
-    x_df["housing"] = x_df.housing.apply(lambda s: 1 if s == "yes" else 0)
-    x_df["loan"] = x_df.loan.apply(lambda s: 1 if s == "yes" else 0)
-    contact = pd.get_dummies(x_df.contact, prefix="contact")
-    x_df.drop("contact", inplace=True, axis=1)
-    x_df = x_df.join(contact)
-    education = pd.get_dummies(x_df.education, prefix="education")
-    x_df.drop("education", inplace=True, axis=1)
-    x_df = x_df.join(education)
-    x_df["month"] = x_df.month.map(months)
-    x_df["day_of_week"] = x_df.day_of_week.map(weekdays)
-    x_df["poutcome"] = x_df.poutcome.apply(lambda s: 1 if s == "success" else 0)
 
-    y_df = x_df.pop("y").apply(lambda s: 1 if s == "yes" else 0)
+def getdataset():
+    """Get (or create the dataset) for training
+
+    Returns:
+    TabularDataset object
+
+    Parameters:
+    None"""
+
+    # Create the Azure ML dataset from the preferred source
+    # Note that thsi source is the same as used in train.py
+    # grab the data and create a dataset
+    # See if the dataset already exists - if so, skip the Dataset creation pieces
+
+    ds_name = constants.DATASET_NAME
+    dsets = ws.datasets.keys()
+
+    if ds_name in dsets:
+        # dataset exists
+        train_ds = ws.datasets[ds_name]
+    else:
+        # Data set not found. Must create it
+        # This is the original white wine data - not normalized
+        # We will normalize the data and then create a dataset that
+        # then will continue to be used
+        ds = TabularDatasetFactory.from_delimited_files(constants.TABULAR_WINE_DATA_URI, separator=';')
+        
+        X, y, norm_df = clean_data(ds.to_pandas_dataframe())
+        
+        # Split the data into train/test sets
+        # Note that the training data would be used for AutoML; 
+        # the test data is not put to use in this project
+        X_train, _, y_train, _ = train_test_split(X, y, test_size=0.2)
+        
+        # Add x and y together
+        # save the new df to disk as a csv
+        # Upload to a datastore
+        # load from datastore as an Azure TabularDataSet
+        
+        # Concat two pandas dataframes togethere
+        train_data = pd.concat([X_train, y_train], axis=1)
+        
+        # From here on - X_train contains both input + output
+
+        # save and reload the clean data so that Azure ML can use it
+        # See https://stackoverflow.com/questions/60380154/upload-dataframe-as-dataset-in-azure-machine-learning
+        
+        # To be able to load to datastore - the data needs to be in a folder.
+        # Thus first create the directory if it does not exist
+        file_path = os.path.join(constants.TRAIN_DATA_DIR, constants.TRAIN_DATA_FILE)
+        norm_file_path = os.path.join(constants.TRAIN_DATA_DIR, constants.TRAIN_NORMALIZATION_PARAMETERS_FILE)
+        if constants.TRAIN_DATA_DIR not in os.listdir():
+          os.mkdir(os.path.join('.', constants.TRAIN_DATA_DIR))
+        else:
+          # delete contents of directory
+          os.remove(file_path)
+          os.remove(norm_file_path)
+          
+        # now save the training data to disk
+        train_data.to_csv(file_path, index=False)
+        norm_df.to_csv(norm_file_path)
+        
+        # upload the file to the default datastore
+        datastore = ws.get_default_datastore()
+        datastore.upload(src_dir=const.TRAIN_DATA_DIR, target_path=const.TRAIN_DATA_DIR, overwrite=True)
+
+        # Now Create the training dataset 
+        train_ds = TabularDatasetFactory.from_delimited_files(datastore.path(file_path))
+        
+        # Register the dataset so that on repeated runs, the data does not have to be fetched evey time
+        train_ds = train_ds.register(workspace=ws, name=ds_name, description=constants.DATASET_DESCRIPTION)
+
+    return train_ds
+
+
+
+
+def clean_data(all_data):
+
+    y_df = all_data.pop('quality').apply(lambda s: 1 if s >= 7 else 0)
+    x_df = all_data
     
-    return x_df, y_df
+    # Clean and normalize the data
+    x_df=(all_data-all_data.mean())/all_data.std()
+    
+    # Retrun the normalization information as well
+    norm_df = pd.DataFrame(data=[all_data.mean(), all_data.std()], index=['Mean', 'Std'], columns=all_data.columns)
+    
+    return x_df, y_df, norm_df
+
 
 def main():
     # Add arguments to script
@@ -57,23 +123,22 @@ def main():
     accuracy = model.score(x_test, y_test)
     run.log("Accuracy", np.float(accuracy))
 
-# TODO: Create TabularDataset using TabularDatasetFactory
+# Create TabularDataset using TabularDatasetFactory
 # Data is located at:
-# "https://automlsamplenotebookdata.blob.core.windows.net/automl-sample-notebook-data/bankmarketing_train.csv"
 
-# ds = ### YOUR CODE HERE ###
-ds = TabularDatasetFactory.from_delimited_files("https://automlsamplenotebookdata.blob.core.windows.net/automl-sample-notebook-data/bankmarketing_train.csv")
+ds = TabularDatasetFactory.from_delimited_files(constants.CAPSTONE_TABULAR_WINE_DATA, separator=';')
 
-x, y = clean_data(ds)
+x, y, _ = clean_data(ds.to_pandas_dataframe())
 
-# TODO: Split data into train and test sets.
+# : Split data into train and test sets.
 
-### YOUR CODE HERE ###
 x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2)
 
 run = Run.get_context()
 
-
+os.makedirs(os.path.dirname(constants.TRAIN_DATA_DIR, exist_ok=True)
+# note file saved in the outputs folder is automatically uploaded into experiment record
+joblib.dump(value=model, filename=constants.DEPLOYED_HYPER_MODEL_PATH)
 
 if __name__ == '__main__':
     main()
