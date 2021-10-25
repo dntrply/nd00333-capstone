@@ -3,18 +3,17 @@ import pickle
 import numpy as np
 import pandas as pd
 import azureml.train.automl
-from sklearn.externals import joblib
-from sklearn.linear_model import Ridge
+import joblib
 
-from inference_schema.schema_decorators import input_schema, output_schema
-from inference_schema.parameter_types.standard_py_parameter_type import StandardPythonParameterType
-from inference_schema.parameter_types.numpy_parameter_type import NumpyParameterType
-from inference_schema.parameter_types.pandas_parameter_type import PandasParameterType
+from azureml.core.model import Model
+import logging
 
 DEPLOYED_AUTOML_MODEL_PATH = 'outputs/best_automl.pkl'
 
 def init():
     global model
+    logging.basicConfig(level=logging.DEBUG)
+    print(Model.get_model_path(model_name='my-best-model'))
     # Replace filename if needed.
     model_path = os.path.join(os.getenv('AZUREML_MODEL_DIR'), os.path.basename(CAPSTONE_DEPLOYED_MODEL_PATH))
 
