@@ -33,6 +33,7 @@ DEPLOYED_HYPER_MODEL_PATH = 'outputs/best_hyperdrive.pkl'
 
 # deployed automl model constants
 DEPLOYED_AUTOML_MODEL_PATH = 'outputs/best_automl.pkl'
+DEPLOYED_AUTOML_MODEL_NAME = 'wine-taste-automl'
 DEPLOYED_AUTOML_MODEL_DESCRIPTION = 'AutoML Registered Model'
 
 # AutoML config settings
