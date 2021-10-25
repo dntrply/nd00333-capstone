@@ -1,7 +1,5 @@
 import json
-import pickle
 import numpy as np
-import pandas as pd
 import azureml.train.automl
 import joblib
 
@@ -13,9 +11,10 @@ DEPLOYED_AUTOML_MODEL_PATH = 'outputs/best_automl.pkl'
 def init():
     global model
     logging.basicConfig(level=logging.DEBUG)
-    print(Model.get_model_path(model_name='my-best-model'))
+    print(Model.get_model_path(model_name='best_automl.pkl'))
     # Replace filename if needed.
-    model_path = os.path.join(os.getenv('AZUREML_MODEL_DIR'), os.path.basename(CAPSTONE_DEPLOYED_MODEL_PATH))
+    # model_path = os.path.join(os.getenv('AZUREML_MODEL_DIR'), os.path.basename(CAPSTONE_DEPLOYED_MODEL_PATH))
+    model_path = Model.get_model_path(model_name='best_automl.pkl')
 
     # Deserialize the model file back into a sklearn model.
     model = joblib.load(model_path)
