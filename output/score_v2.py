@@ -18,14 +18,17 @@ from inference_schema.parameter_types.numpy_parameter_type import NumpyParameter
 from inference_schema.parameter_types.pandas_parameter_type import PandasParameterType
 from inference_schema.parameter_types.standard_py_parameter_type import StandardPythonParameterType
 
-input_sample = pd.DataFrame({"fixed acidity": pd.Series([0.0], dtype="float64"), "volatile acidity": pd.Series([0.0], dtype="float64"), "citric acid": pd.Series([0.0], dtype="float64"), "residual sugar": pd.Series([0.0], dtype="float64"), "chlorides": pd.Series([0.0], dtype="float64"), "free sulfur dioxide": pd.Series([0.0], dtype="float64"), "total sulfur dioxide": pd.Series([0.0], dtype="float64"), "density": pd.Series([0.0], dtype="float64"), "pH": pd.Series([0.0], dtype="float64"), "sulphates": pd.Series([0.0], dtype="float64"), "alcohol": pd.Series([0.0], dtype="float64")})
-output_sample = np.array([0])
+data_sample = PandasParameterType(pd.DataFrame({"fixed acidity": pd.Series([0.0], dtype="float64"), "volatile acidity": pd.Series([0.0], dtype="float64"), "citric acid": pd.Series([0.0], dtype="float64"), "residual sugar": pd.Series([0.0], dtype="float64"), "chlorides": pd.Series([0.0], dtype="float64"), "free sulfur dioxide": pd.Series([0.0], dtype="float64"), "total sulfur dioxide": pd.Series([0.0], dtype="float64"), "density": pd.Series([0.0], dtype="float64"), "pH": pd.Series([0.0], dtype="float64"), "sulphates": pd.Series([0.0], dtype="float64"), "alcohol": pd.Series([0.0], dtype="float64")}))
+input_sample = StandardPythonParameterType({'data': data_sample})
 method_sample = StandardPythonParameterType("predict")
+
+result_sample = NumpyParameterType(np.array([0]))
+output_sample = StandardPythonParameterType({'Results':result_sample})
 
 try:
     log_server.enable_telemetry(INSTRUMENTATION_KEY)
     log_server.set_verbosity('INFO')
-    logger = logging.getLogger('azureml.automl.core.scoring_script')
+    logger = logging.getLogger('azureml.automl.core.scoring_script_v2')
 except:
     pass
 
@@ -47,17 +50,14 @@ def init():
         raise
 
 @input_schema('method', method_sample, convert_to_provided_type=False)
-@input_schema('data', PandasParameterType(input_sample))
-@output_schema(NumpyParameterType(output_sample))
-def run(data, method="predict"):
-    try:
-        if method == "predict_proba":
-            result = model.predict_proba(data).values
-        elif method == "predict":
-            result = model.predict(data)
-        else:
-            raise Exception(f"Invalid predict method argument received ({method})")
-        return json.dumps({"result": result.tolist()})
-    except Exception as e:
-        result = str(e)
-        return json.dumps({"error": result})
+@input_schema('Inputs', input_sample)
+@output_schema(output_sample)
+def run(Inputs, method="predict"):
+    data = Inputs['data']
+    if method == "predict_proba":
+        result = model.predict_proba(data).values
+    elif method == "predict":
+        result = model.predict(data)
+    else:
+        raise Exception(f"Invalid predict method argument received ({method})")
+    return {'Results':result.tolist()}
