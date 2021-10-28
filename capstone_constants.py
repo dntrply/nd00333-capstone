@@ -27,6 +27,9 @@ TRAIN_NORMALIZATION_PARAMETERS_FILE = 'normaliztion_parameters.csv'
 # curated environment to be used for HyperML
 CURATED_ENV_NAME = 'AzureML-Tutorial'
 
+# Output directory
+OUTPUT_DIR = 'output'
+
 # deployed hyper model constants
 DEPLOYED_HYPER_MODEL_NAME = 'wine-taste-hyper'
 DEPLOYED_HYPER_MODEL_PATH = 'outputs/best_hyperdrive.pkl' 
@@ -47,5 +50,5 @@ INFERENCE_SCORING_SCRIPT = 'score.py'
 DEPLOYED_SERVICE = 'white-wine-service'
 
 ENV_DIR = '.'
-BEST_RUN_ENV = 'best_run_env.yml'
+BEST_RUN_ENV = 'outputs/best_run_env.yml'
 
