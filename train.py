@@ -13,7 +13,6 @@ from azureml.core.datastore import Datastore
 
 from sklearn.linear_model import LogisticRegression
 
-import capstone_constants as c_constants
 
 
 
@@ -92,18 +91,12 @@ def get_dataset(ws):
 
 
 
-def clean_data(all_data):
+def split_data(all_data):
 
-    y_df = all_data.pop('quality').apply(lambda s: 1 if s >= 7 else 0)
+    y_df = all_data.pop('diagnosis')
     x_df = all_data
     
-    # Clean and normalize the data
-    x_df=(all_data-all_data.mean())/all_data.std()
-    
-    # Retrun the normalization information as well
-    norm_df = pd.DataFrame(data=[all_data.mean(), all_data.std()], index=['Mean', 'Std'], columns=all_data.columns)
-    
-    return x_df, y_df, norm_df
+    return x_df, y_df
 
 
 def main():
@@ -131,9 +124,9 @@ def main():
 # Create TabularDataset using TabularDatasetFactory
 # Data is located at:
 
-ds = TabularDatasetFactory.from_delimited_files(c_constants.TABULAR_WINE_DATA_URI, separator=';')
+ds = TabularDatasetFactory.from_delimited_files('https://github.com/dntrply/nd00333-capstone/raw/master/dataset/Breast_cancer_data.csv')
 
-x, y, _ = clean_data(ds.to_pandas_dataframe())
+x, y = split_data(ds.to_pandas_dataframe())
 
 # : Split data into train and test sets.
 
