@@ -14,83 +14,6 @@ from azureml.core.datastore import Datastore
 from sklearn.linear_model import LogisticRegression
 
 
-
-
-
-def get_dataset(ws):
-    """Get (or create the dataset) for training
-
-    Returns:
-    TabularDataset object
-
-    Parameters:
-    None"""
-
-    # Create the Azure ML dataset from the preferred source
-    # Note that thsi source is the same as used in train.py
-    # grab the data and create a dataset
-    # See if the dataset already exists - if so, skip the Dataset creation pieces
-
-    ds_name = c_constants.DATASET_NAME
-    dsets = ws.datasets.keys()
-
-    if ds_name in dsets:
-        # dataset exists
-        train_ds = ws.datasets[ds_name]
-    else:
-        # Data set not found. Must create it
-        # This is the original white wine data - not normalized
-        # We will normalize the data and then create a dataset that
-        # then will continue to be used
-        ds = TabularDatasetFactory.from_delimited_files(c_constants.TABULAR_WINE_DATA_URI, separator=';')
-        
-        X, y, norm_df = clean_data(ds.to_pandas_dataframe())
-        
-        # Split the data into train/test sets
-        # Note that the training data would be used for AutoML; 
-        # the test data is not put to use in this project
-        X_train, _, y_train, _ = train_test_split(X, y, test_size=0.2)
-        
-        # Add x and y together
-        # save the new df to disk as a csv
-        # Upload to a datastore
-        # load from datastore as an Azure TabularDataSet
-        
-        # Concat two pandas dataframes togethere
-        train_data = pd.concat([X_train, y_train], axis=1)
-        
-        # From here on - X_train contains both input + output
-
-        # save and reload the clean data so that Azure ML can use it
-        # See https://stackoverflow.com/questions/60380154/upload-dataframe-as-dataset-in-azure-machine-learning
-        
-        # To be able to load to datastore - the data needs to be in a folder.
-        # Thus first create the directory if it does not exist
-        file_path = os.path.join('.', c_constants.TRAIN_DATA_DIR, c_constants.TRAIN_DATA_FILE)
-        norm_file_path = os.path.join('.', c_constants.TRAIN_DATA_DIR, c_constants.TRAIN_NORMALIZATION_PARAMETERS_FILE)
-        if c_constants.TRAIN_DATA_DIR not in os.listdir():
-          os.mkdir(os.path.join('.', c_constants.TRAIN_DATA_DIR))
-
-          
-        # now save the training data to disk
-        train_data.to_csv(file_path, index=False)
-        norm_df.to_csv(norm_file_path, index=False)
-        
-        # upload the file to the default datastore
-        datastore = ws.get_default_datastore()
-        datastore.upload(src_dir=c_constants.TRAIN_DATA_DIR, target_path=c_constants.TRAIN_DATA_DIR, overwrite=True)
-
-        # Now Create the training dataset 
-        train_ds = TabularDatasetFactory.from_delimited_files(datastore.path(os.path.join(c_constants.TRAIN_DATA_DIR, c_constants.TRAIN_DATA_FILE)))
-        
-        # Register the dataset so that on repeated runs, the data does not have to be fetched evey time
-        train_ds = train_ds.register(workspace=ws, name=ds_name, description=c_constants.DATASET_DESCRIPTION)
-
-    return train_ds
-
-
-
-
 def split_data(all_data):
 
     y_df = all_data.pop('diagnosis')
@@ -116,7 +39,7 @@ def main():
     accuracy = model.score(x_test, y_test)
     run.log("Accuracy", np.float(accuracy))
 
-    os.makedirs(c_constants.TRAIN_DATA_DIR, exist_ok=True)
+    os.makedirs('outputs', exist_ok=True)
     
     # note file saved in the outputs folder is automatically uploaded into experiment record
     joblib.dump(value=model, filename=c_constants.DEPLOYED_HYPER_MODEL_PATH)
