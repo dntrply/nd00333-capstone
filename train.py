@@ -1,15 +1,11 @@
 import argparse
 import os
 import numpy as np
-from sklearn.metrics import mean_squared_error
 import joblib
 from sklearn.model_selection import train_test_split
-from sklearn.preprocessing import OneHotEncoder
 import pandas as pd
 from azureml.core.run import Run
 from azureml.data.dataset_factory import TabularDatasetFactory
-from azureml.core.workspace import Workspace
-from azureml.core.datastore import Datastore
 
 from sklearn.linear_model import LogisticRegression
 
@@ -42,7 +38,7 @@ def main():
     os.makedirs('outputs', exist_ok=True)
     
     # note file saved in the outputs folder is automatically uploaded into experiment record
-    joblib.dump(value=model, filename=c_constants.DEPLOYED_HYPER_MODEL_PATH)
+    joblib.dump(value=model, filename=os.path.join('outputs', 'best_hyper.pkl'))
 
 # Create TabularDataset using TabularDatasetFactory
 # Data is located at:
