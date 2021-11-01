@@ -8,7 +8,8 @@ import pandas as pd
 from azureml.core.model import Model
 def init():
     global model
-    model_path = os.path.join(os.getenv('AZUREML_MODEL_DIR', 'best_hyper.pkl'))
+    model_path = os.path.join(os.getenv('AZUREML_MODEL_DIR'), 'best_hyper.pkl')
+
     model = joblib.load(model_path)
 
 def run(raw_data): 
