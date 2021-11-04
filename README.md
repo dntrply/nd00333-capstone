@@ -18,7 +18,7 @@ The task is to predict the presence of breast cancer given certain physical char
 
 ### Access
 The data is downloaded as a csv file from https://www.kaggle.com/merishnasuwal/breast-cancer-prediction-dataset . It is then made avalabe at a publicly available github such as https://github.com/dntrply/nd00333-capstone/raw/master/dataset/Breast_cancer_data.csv
-The data is read into the AzureML project and used from there on.
+The data is read into the AzureML project using the Tabular Dataset Factory function to read from a file/URL. Once ingested, the Tabular Dataset is used from there on.
 
 ## Automated ML
 The objective is a binary classification (cancerous or not) and so the primary_metric chosen is 'AUC_weighted'. Early stopping is enabled and an experiment timeout is set so as to limit the total time. Early stopping is enabled to prevent overfitting. The appropriate data and label name are specified.
@@ -79,6 +79,12 @@ The results indicate that the first and last samples are likely cancerous.
 
 **Screenshot showing model endpoint as Healthy**
 ![image](https://user-images.githubusercontent.com/17679107/140250416-a2b75e9e-c97f-45bb-9fa2-af6d1eb61f85.png)
+
+## Suggestions for improvements
+* Experiment with normalizing the data to determine if model accuracy can be improved.
+* Determine if the input features are highly correlated. If so, remove highly correlated features prior to training
+* Provide enhanced instrumentation/logging especially during inference
+* Convert the model to ONNX format for greater interoperability
 
 
 ## Screen Recording
