@@ -59,9 +59,11 @@ The accuracy of the best model was **0.938**. The corresponding parameter values
 
 
 ## Model Deployment
-The HyperDrive model had a slightly better accuracy and was chosen to be deployed. Deployment consists of specifying an Inference configuration and a deployment configuration. Inference configuration consists of specifying the environment, the scoring code (with init and run functions). Once the deployment is successful, the scoring_URI can be retrieved from the deployment service. The scoring URI can then be used to make a HTTP request with the input data. The input data in this example is a batch array of parameter values. The endpoint is capable of taking the batch array, invoking the model prediction, and returning the predicted results. 
-
-An example is:
+The HyperDrive model had a slightly better accuracy and was chosen to be deployed. Deployment consists of specifying an Inference configuration and a deployment configuration. Inference configuration consists of specifying the environment, the scoring code (with init and run functions). Once the deployment is successful, the scoring_URI can be retrieved from the deployment service. The scoring URI can then be used to make a HTTP request with the input data. The input data in this example is a batch array of parameter values. The endpoint is capable of taking the batch array, invoking the model prediction, and returning the predicted results.
+<p/>
+Any resources such as the service and the compute cluster are then deleted.
+<p/>
+An example of one instance of input data is:
 ```
     [[9.504, 12.44, 60.34, 273.9, 0.1024],
     [15.37, 22.76, 100.2, 728.2, 0.092], 
